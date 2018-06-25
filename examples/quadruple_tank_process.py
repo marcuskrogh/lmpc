@@ -15,13 +15,13 @@ class qtp:
         self.t     = 0
 
         # Parameters
-        self.gamma = np.array([0.403, 0.31])    # [%]
+        self.gamma = np.array([0.352, 0.298])   # [%]
         self.A     = 380.1327                   # [cm^2]
         self.a     = 1.2272                     # [cm^2]
         self.g     = 981.0                      # [cm/s^2]
         self.rho   = 1.0                        # [g/cm^3]
 
-    def state( self, x, t, u, d ):
+    def state( self, x, t, u, d=None ):
         '''Ordinary differential equation model.'''
         # Influent from pump and disturbances
         qin = np.array(   [
@@ -33,7 +33,11 @@ class qtp:
 
         # Liquid levels
         h = x/(self.rho*self.A) # [cm]
-        qout = np.array(self.a*np.sqrt(2*self.g*h))
+        h = np.max( np.array( [h,1e-6*np.ones(h.shape)] ), axis=0 )
+        if d:
+            qout = np.array(self.a*np.sqrt(2*self.g*h))*(np.add(d,1))
+        else:
+            qout = np.array(self.a*np.sqrt(2*self.g*h))
 
         # Influent from other tanks
         qoutin = np.array([
@@ -49,12 +53,12 @@ class qtp:
         return np.array(dxdt).reshape((4,))
 
     def measurement( self, x ):
-        return x/(self.rho*self.A)
+        return matrix( x/(self.rho*self.A) )
 
     def output( self, x ):
-        return (x/(self.rho*self.A))[:2]
+        return matrix( (x/(self.rho*self.A))[:2] )
 
-    def simulation_step( self, dt, u, d ):
+    def simulation_step( self, dt, u, d=None ):
         '''Simulate dt seconds of the ODE model.'''
         #u = np.array(u)
         #d = np.array(d)
